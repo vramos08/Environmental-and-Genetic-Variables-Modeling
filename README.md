@@ -1,1 +1,6 @@
 # Project2-AMS315
+This project aims to find a model that accurately reflects the provided datasets. The dataset is composed of four environmental variables and twenty genetic variables. The primary objective of this project is to control the environmental variables and determine which environmental variables are associated with the outcome variable.
+#Methods
+An initial model "model_env" was created using only environmental variables to find the adjusted r square. Then a second model "model_raw" was created that included both environmental and genetic variables, with consideration for up to 2nd-order interactions. A box-cox transformation was applied to address skewness in the residual plot of "model_raw". A stepwise regression was performed using the "leaps" package, leading to the selection of key variables. Finally, the model "model_final" was made which incorporated interaction terms.
+#Results
+The dataset contained a total of 1009 observations across 25 variables. The r squared for the models using environmental variables and genetic variables showed an increase after transformation, highlighting the significance of genetic variables. The final model "Y.91=8.945634+6.101031E4+5.348050G18:G19" was made which was supported by low p-values, high t-values, and a significant r squared.
