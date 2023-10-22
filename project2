@@ -1,0 +1,54 @@
+#accessing the file
+getwd()
+wdir <- "C:/Users/viann/Desktop/ams_315"
+setwd(wdir)
+dat1 <- read.csv('284007_project2.csv', header=TRUE)
+#str(dat1)
+
+#fitting the model with only the environmental variables
+model_env <- lm(Y~ E1+E2+E3+E4, data = dat1)
+summary(model_env) #adjusted R^2 = 0.6259
+summary(model_env)$adj.r.squared #adjusted R^2 = 0.6258511
+
+#assess the contributions of the genertic variables.
+model_raw <- lm(Y ~ (E1+E2+E3+E4+G1+G2+G3+G4+G5+G6+G7+G8+G9+G10+G11+G12+G13+G14+G15+G16+G17+G18+G19+G20)^2, data=dat1)
+plot(resid(model_raw) ~ fitted(model_raw), main='Residual Plot')
+#summary(model_raw)
+
+#this is where we do the transformation after seeing the lambda
+library(MASS)
+box_trans <- boxcox(model_raw)
+(lambda <- box_trans$x[which.max(box_trans$y)]) #lambda=0.9090909
+model_trans <- lm(I(Y^.91)~(E1+E2+E3+E4+G1+G2+G3+G4+G5+G6+G7+G8+G9+G10+G11+G12+G13+G14+G15+G16+G17+G18+G19+G20)^2, data=dat1)
+
+#calculating the adjusted r squared
+summary(model_raw)$adj.r.squared    #after adding genetic variable: R^2=0.6645835
+summary(model_trans)$adj.r.squared  #after transformation: R^2=0.6641944
+plot(resid(model_trans) ~ fitted(model_trans), main='New Residual Plot')
+
+#simplifying the model and using setwise regression
+#install.packages("leaps")
+library(leaps)
+model_leaps <- regsubsets(model.matrix(model_trans)[,-1], I((dat1$Y)^.5), nbest=1,nvmax=5,method='forward',intercept=TRUE)
+temp <- summary(model_leaps)
+
+#proposed model
+#install.packages("knitr")
+library(knitr)
+Var <- colnames(model.matrix(model_trans))
+model_select <- apply(temp$which, 1,function(x) paste0(Var[x], collapse='+'))
+kable(data.frame(cbind(model = model_select, adjR2=temp$adjr2,BIC = temp$bic)), caption="Model Summary")
+#biggest increase between the 1st and 2nd row
+#smallest decrease is between row 3rd and 4th row
+
+#making sure any main effects that are significant are in the model
+model_main <- lm( I(Y^.91) ~ E1+E2+E3+E4+G1+G2+G3+G4+G5+G6+G7+G8+G9+G10+G11+G12+G13+G14+G15+G16+G17+G18+G19+G20, data=dat1)
+temp <- summary(model_main)
+kable(temp$coefficients[ abs(temp$coefficients[,4]) <= 0.001, ], caption='Sig Coefficients')
+
+#I will be using the variables E4, G18, G19 for my model
+model_2stage <-lm( I(Y^.91) ~ (E4+G18+G19)^2, data=dat1)
+temp <- summary(model_2stage)
+kable(temp$coefficients[ abs(temp$coefficients[,3]) >= 4, ])
+model_final <- lm((I(Y^.91)) ~ E4 + G18:G19, data = dat1)
+summary(model_final)
